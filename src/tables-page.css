@@ -1,0 +1,51 @@
+.tables-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-top: 100px;
+    margin-left: 50px;
+}
+
+.table {
+    min-width: 800px;
+}
+
+.table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: white;
+    margin-bottom: 15px;
+}
+
+.table-name-block {
+    display: flex;
+    align-items: center;
+}
+
+.table-name {
+    margin-right: 5px;
+}
+
+.btn {
+    padding: 8px 10px;
+    cursor: pointer;
+    border: none;
+    border-radius: 5px;
+    background-color: #ca4230;
+    color: black;
+    font-size: 16px;
+    font-weight: 600;
+    width: 200px;
+}
+
+.btn:disabled {
+    cursor: default;
+    background-color: #8C8C8C;
+}
+
+.delete-btn {}
+
+.add-btn {
+    background-color: #FAD85D;
+}
