@@ -4,6 +4,7 @@ import './request-page.css'
 import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from "@mui/material";
 import {requests} from "./dtos";
 import {DataGrid, GridColDef, GridRowHeightParams} from "@mui/x-data-grid";
+import XLSX from "xlsx";
 import TextField from "@mui/material/TextField";
 import {api} from "./api";
 import {pieArcLabelClasses, PieChart} from "@mui/x-charts";
@@ -31,6 +32,14 @@ export default function RequestPage() {
     const onChangeField = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const value = !Number.isNaN(Number(e.target.value)) ? Number(e.target.value) : e.target.value;
         setField(value);
+    }
+
+    const onExportClick = async () => {
+        const filteredData = chartData.reduce((accum, row) => ({...accum, [row.label]: row.value}), {})
+        const workSheet = XLSX.utils.json_to_sheet([filteredData])
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, workSheet, "Данные");
+        XLSX.writeFile(workbook, "data.xlsx", {compression: true})
     }
 
 
@@ -82,7 +91,7 @@ export default function RequestPage() {
                     arr.push({
                         id: ++i,
                         value: Number(value),
-                        label: key.split(" ").join("\n"),
+                        label: key,
                         color: colors.pop()
                     })
                 }
@@ -154,24 +163,27 @@ export default function RequestPage() {
                 />
                 {
                     chartData.length > 0 ?
-                        <PieChart
-                            slotProps={{legend: {hidden: true}}}
-                            series={[
-                                {
-                                    cornerRadius: 5,
-                                    arcLabel: (item) => `${item.label}(${item.value})`,
-                                    data: chartData,
-                                },
-                            ]}
-                            sx={{
-                                [`& .${pieArcLabelClasses.root}`]: {
-                                    fill: "black",
-                                    fontWeight: "bold",
-                                    fontSize: "13px",
-                                },
-                            }} width={800}
-                            height={500}
-                        />
+                        <div style={{display: "flex", alignItems: "center"}}>
+                            <PieChart
+                                slotProps={{legend: {hidden: true}}}
+                                series={[
+                                    {
+                                        cornerRadius: 5,
+                                        arcLabel: (item) => `${item.label}(${item.value})`,
+                                        data: chartData,
+                                    },
+                                ]}
+                                sx={{
+                                    [`& .${pieArcLabelClasses.root}`]: {
+                                        fill: "black",
+                                        fontWeight: "bold",
+                                        fontSize: "13px",
+                                    },
+                                }} width={800}
+                                height={500}
+                            />
+                            <button onClick={onExportClick} className="btn add-btn">Экспортировать в Excel</button>
+                        </div>
                         : null
                 }
             </div>

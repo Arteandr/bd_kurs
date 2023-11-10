@@ -22,7 +22,8 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.8.1",
     "sort-by": "^0.0.2",
-    "styled-components": "^5.3.6"
+    "styled-components": "^5.3.6",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.0/xlsx-0.20.0.tgz"
   },
   "devDependencies": {
     "@types/react": "^18.0.27",
