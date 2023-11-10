@@ -99,8 +99,8 @@ export default function RequestPage() {
         let nodes: JSX.Element[] = []
         for (const key in requests) {
             const request = requests[key];
-            nodes.push(<MenuItem style={request.altName ? {backgroundColor: "#176419"} : {}}
-                                 value={key}>[{Number(key) + 1}] {request.altName || request.name}</MenuItem>)
+            nodes.push(<MenuItem
+                value={key}>[{Number(key) + 1}] {request.altName || request.name}</MenuItem>)
         }
 
         return nodes;

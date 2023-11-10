@@ -146,28 +146,39 @@ export interface IRequest {
     withChart?: boolean
 }
 
-// export interface Requests {
-//     [key: number]: IRequest
-// }
-
 export type Requests = IRequest[]
 
 export const requests: Requests = [
     {
-        name: "Симметричное внутренее соединение с условием (1)",
-        altName: "Получить название фильмов выпущенные студией с заданым ID",
+        name: "Симметричное внутренее соединение с условием по внешнему ключу(1)",
+        altName: "Получить название фильмов выпущенные студией с заданным ID",
         path: "films/symmetricForeignFirst",
         withField: true,
         fieldName: "ID студии"
     },
     {
-        name: "Симметричное внутренее соединение с условием (3)",
-        path: "studios/symmetricDateFirst",
+        name: "Симметричное внутренее соединение с условием по внешнему ключу(2)",
+        altName: "Получить контакты кинотеатров в районе с заданным ID",
+        path: "films/symmetricForeignSecond",
         withField: true,
-        fieldName: "Начальная дата"
+        fieldName: "ID района"
     },
     {
-        name: "Симметричное внутренее соединение без условия (1)",
+        name: "Симметричное внутренее соединение с условием по дате(1)",
+        altName: "Получить фильм, кинотеатр где он будет показываться и дату сеанса когда он будет показываться",
+        path: "studios/symmetricDateFirst",
+        withField: true,
+        fieldName: "Дата (через пробел)"
+    },
+    {
+        name: "Симметричное внутренее соединение с условием по дате(2)",
+        altName: "Получить информацию о кинотеатрах у которых действительная лицензия (после указанной даты)",
+        path: "cinemas/symmetricDateSecond",
+        withField: true,
+        fieldName: "Дата"
+    },
+    {
+        name: "Симметричное внутреннее соединение без условия (1)",
         altName: "Получить дату сеансов и их тип",
         path: "films/symmetricWithoutCondFirst",
         withField: false,
@@ -192,7 +203,7 @@ export const requests: Requests = [
     },
     {
         name: "Запрос на запросе по принципу левого соединения",
-        altName: "Получить имя фильма и инициалы режиссера",
+        altName: "Получить название фильма и инициалы режиссера",
         path: "films/requestOnRequestLeft",
         withField: false,
     },
@@ -204,10 +215,36 @@ export const requests: Requests = [
     },
     {
         name: "Итоговый запрос без условия c итоговыми данными вида: «всего», «в том числе»",
-        altName: "Получить общее количество фильмов, в том числе длинее часа и созданные после 2012",
+        altName: "Получить общее количество фильмов, в том числе длиннее часа и созданные после 2012",
         path: "films/finalRequestWithInclude",
         withField: false,
         withChart: true,
+    },
+    {
+        name: "Итоговый запрос с условием на данные по значению",
+        altName: "Получить отношение длительности фильма и количества фильмов с такой длительностью (больше заданной)",
+        path: "films/finalBySpecificValue",
+        withField: true,
+        fieldName: "Длительность"
+    },
+    {
+        name: "Итоговый запрос с условием на данные по маске",
+        altName: "Получить количество фильмов имя которых соответствует заданной маске",
+        path: "films/finalBySpecificMask",
+        withField: true,
+        fieldName: "Маска"
+    },
+    {
+        name: "Итоговый запрос с условием на данные с использованием индекса",
+        altName: "Получить идентификатор режиссера и количество его фильмов",
+        path: "films/finalByIndex",
+        withField: false,
+    },
+    {
+        name: "Итоговый запрос с условием на данные без использования индекса",
+        altName: "Получить года создания фильмов и количество фильмов снятых в каждом году",
+        path: "films/finalWithoutIndex",
+        withField: false,
     },
     {
         name: "Итоговый запрос с условием на группы",
@@ -231,7 +268,7 @@ export const requests: Requests = [
     },
     {
         name: "Запрос с использованием объединения",
-        altName: "Получить объедененные фильмы и кинотеатры",
+        altName: "Получить объединенные фильмы и кинотеатры",
         path: "districts/requestWithUnion",
         withField: false,
     },
@@ -258,7 +295,7 @@ export const requests: Requests = [
         altName: "Получить общее количество фильмов снятых режиссером",
         path: "films/requestWithFinalData",
         withField: true,
-        fieldName: "Имя режиссера"
+        fieldName: "ID режиссера"
     },
     {
         name: "Определить среднее количество зрителей по каждому кинотеатру",
