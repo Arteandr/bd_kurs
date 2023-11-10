@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@emotion/styled": "^11.10.5",
-    "@mui/material": "^5.11.9",
+    "@mui/lab": "^5.0.0-alpha.152",
     "@mui/styled-engine-sc": "^5.11.9",
+    "@mui/x-charts": "^6.18.1",
     "@mui/x-data-grid": "^5.17.23",
     "@types/react-router": "^5.1.20",
+    "axios": "^1.6.0",
     "localforage": "^1.10.0",
     "match-sorter": "^6.3.1",
     "react": "^18.2.0",
