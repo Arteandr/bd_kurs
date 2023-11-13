@@ -1,7 +1,9 @@
-type row = {
+export type row = {
     attribute: string,
     type: dto_type,
     text: string,
+    altTable?: string
+    mainRow?: string
 }
 
 interface dtos_type {
@@ -14,7 +16,8 @@ interface dtos_type {
 export enum dto_type {
     string,
     number,
-    bool
+    bool,
+    select,
 }
 
 export const create_dtos: dtos_type = {
@@ -48,18 +51,24 @@ export const create_dtos: dtos_type = {
             },
             {
                 attribute: "directorId",
-                type: dto_type.number,
-                text: "Идентификатор режиссера"
+                type: dto_type.select,
+                altTable: "directors",
+                text: "Режиссер",
+                mainRow: "Фамилия",
             },
             {
                 attribute: "qualityId",
-                type: dto_type.number,
-                text: "Идентификатор качества пленки"
+                type: dto_type.select,
+                altTable: "qualities",
+                text: "Качество пленки",
+                mainRow: "Название",
             },
             {
                 attribute: "studioId",
-                type: dto_type.number,
-                text: "Идентификатор студии"
+                type: dto_type.select,
+                altTable: "studios",
+                text: "Студия",
+                mainRow: "Название",
             }
         ]
     },
@@ -73,8 +82,14 @@ export const create_dtos: dtos_type = {
             {attribute: "licenseEnd", type: dto_type.string, text: "Дата окончания лицензии"},
             {attribute: "seats", type: dto_type.number, text: "Количество мест"},
             {attribute: "online", type: dto_type.bool, text: "Возможность покупки онлайн"},
-            {attribute: "typeId", type: dto_type.number, text: "Идентификатор типа собственности"},
-            {attribute: "districtId", type: dto_type.number, text: "Идентификатор района"},
+            {
+                attribute: "typeId",
+                type: dto_type.select,
+                mainRow: "Название",
+                altTable: "cinema_types",
+                text: "Тип собственности"
+            },
+            {attribute: "districtId", type: dto_type.select, mainRow: "Название", altTable: "districts", text: "Район"},
         ]
     },
     "sessions": {
@@ -84,9 +99,27 @@ export const create_dtos: dtos_type = {
             {attribute: "ticketsSold", type: dto_type.number, text: "Количество проданных билетов"},
             {attribute: "ticketsOnline", type: dto_type.number, text: "Количество заказаных билетов через интернет"},
             {attribute: "price", type: dto_type.number, text: "Цена билета"},
-            {attribute: "filmId", type: dto_type.number, text: "Идентификатор фильма"},
-            {attribute: "cinemaId", type: dto_type.number, text: "Идентификатор кинотеатра"},
-            {attribute: "typeId", type: dto_type.number, text: "Идентификатор типа сеанса"},
+            {
+                attribute: "filmId",
+                type: dto_type.select,
+                mainRow: "Название",
+                altTable: "films",
+                text: "Фильм"
+            },
+            {
+                attribute: "cinemaId",
+                type: dto_type.select,
+                mainRow: "Название",
+                altTable: "cinemas",
+                text: "Кинотеатр"
+            },
+            {
+                attribute: "typeId",
+                type: dto_type.select,
+                mainRow: "Название",
+                altTable: "session_types",
+                text: "Тип сеанса"
+            },
         ]
     },
     "directors": {
@@ -107,7 +140,13 @@ export const create_dtos: dtos_type = {
         data: [
             {attribute: "name", type: dto_type.string, text: "Названии студии"},
             {attribute: "creationYear", type: dto_type.number, text: "Год создания студии"},
-            {attribute: "countryId", type: dto_type.number, text: "Идентификатор страны размещения студии"},
+            {
+                attribute: "countryId",
+                type: dto_type.select,
+                altTable: "countries",
+                mainRow: "Название",
+                text: "Идентификатор страны размещения студии"
+            },
         ]
     },
     "session_types": {
@@ -236,15 +275,17 @@ export const requests: Requests = [
     },
     {
         name: "Итоговый запрос с условием на данные с использованием индекса",
-        altName: "Получить идентификатор режиссера и количество его фильмов",
+        altName: "Получить по идентификатору режиссера количество его фильмов",
         path: "films/finalByIndex",
-        withField: false,
+        withField: true,
+        fieldName: "ID режиссера"
     },
     {
         name: "Итоговый запрос с условием на данные без использования индекса",
-        altName: "Получить года создания фильмов и количество фильмов снятых в каждом году",
+        altName: "Получить год создания фильмов и количество фильмов снятых в этом году",
         path: "films/finalWithoutIndex",
-        withField: false,
+        withField: true,
+        fieldName: "Год"
     },
     {
         name: "Итоговый запрос с условием на группы",

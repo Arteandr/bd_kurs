@@ -1,4 +1,4 @@
-import {Button, FormControl, MenuItem, Modal, Select, Typography} from "@mui/material";
+import {Button, FormControl, MenuItem, Modal, Select, SelectChangeEvent, Typography} from "@mui/material";
 import {Box} from "@mui/system";
 import {DataGrid, GridColDef, GridRowHeightParams, GridRowId, GridSelectionModel} from "@mui/x-data-grid"
 import React, {useEffect, useState} from "react"
@@ -38,19 +38,22 @@ const createBtnStyle = {
     color: "white",
     backgroundColor: "#279929FF",
     width: "100%",
-    "margin-top": "10px",
+    marginTop: "10px",
 
 }
 
 export default function TablesPage() {
     const [deleteModalOpened, setDeleteModalOpened] = useState<boolean>(false)
     const [createModalOpened, setCreateModalOpened] = useState<boolean>(false)
+    const [editModalOpened, setEditModalOpened] = useState<boolean>(false)
     const [columns, setColumns] = useState<GridColDef[]>([])
     const [rows, setRows] = useState<any[]>([])
     const [error, setError] = useState<string>("");
     const [selected, setSelected] = useState<GridRowId[]>([])
     const [selectedTable, setSelectedTable] = useState<string>("");
     const [creationState, setCreationState] = useState<{ [key: string]: any }>({})
+    const [editingState, setEditingState] = useState<{ [key: string]: any }>({})
+    const [selects, setSelects] = useState<{ [key: string]: any[] }>({})
     const [loading, setLoading] = useState<boolean>(false)
     const {setActive} = useActive()
     useEffect(() => {
@@ -65,12 +68,13 @@ export default function TablesPage() {
             // @ts-ignore
             const dataElement = data[key]
             // r.unshift(dataElement)
-            r.push(dataElement)
+            r.push({...dataElement})
             for (const [key, value] of Object.entries(dataElement)) {
                 if (hash.has(key)) continue;
                 hash.set(key, value)
                 t.push({
                     field: key,
+                    width: hash.size > 1 ? 200 : 80,
                     headerName: key,
                     filterable: true
                 })
@@ -82,17 +86,101 @@ export default function TablesPage() {
         setRows(r)
     }
 
+    const findRow = (id: number) => {
+        const r = rows.find(row => row.id === id);
+        console.log("Найденая строка: ", r)
+
+        return r;
+    }
+
+    const generateEditRows = () => {
+        if (Number.isNaN(Number(selected[0]))) return;
+        return create_dtos[selectedTable].data.reduce<JSX.Element[]>((accum, row) => {
+            const label = <Typography variant="h6">{row.text}</Typography>;
+            accum.push(label);
+            console.log(`Generate field | Type: ${row.type} | Attribute: ${row.attribute.toLowerCase()} | Current value: ${editingState[row.attribute.toLowerCase()]}`)
+            const input = row.type !== dto_type.bool ?
+                <TextField
+                    defaultValue={editingState[row.attribute.toLowerCase()]}
+                    onChange={(event) => {
+                        onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
+                    }} className="modal-input"
+                    type={row.type === dto_type.number ? "number" : ""}/> :
+                <Checkbox checked={editingState[row.attribute.toLowerCase()]} onChange={(event) => {
+                    onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
+                }}/>
+            accum.push(input);
+
+            return accum
+        }, []);
+    }
+    // const generateReduce = async (accum: Promise<{}>, row: row) => {
+    //     if (!row.altTable || !row.mainRow) return accum;
+    //     const response = await api.get(`${row.altTable}/`);
+    //     // return {...accum, [row.altTable]: response[row.mainRow]}
+    //     if (row.altTable !== undefined && row.mainRow !== undefined) {
+    //         accum.then(obj => obj[row.altTable] = response[row.mainRow])
+    //     }
+    //     return accum;
+    // }
+
+    const generateSelects = () => {
+        setLoading(true)
+        const rr = create_dtos[selectedTable].data.filter(row => row.altTable);
+        rr.forEach(row => {
+            if (row.altTable === undefined) return;
+            const key = row.altTable;
+            api.get(`${row.altTable}/`).then(response => {
+                setSelects(prevState => {
+                    return {...prevState, [key]: response}
+                })
+            })
+        })
+        setLoading(false)
+    }
+
+    const onChangeSelectInCreate = (event: SelectChangeEvent, attribute: string) => {
+        const id = Number(event.target.value)
+        setCreationState(prevState => {
+                return {...prevState, [attribute]: id}
+            }
+        )
+        console.log("CREATION_STATE: ", creationState)
+    }
+
     const generateCreateRows = () => {
         return create_dtos[selectedTable].data.reduce<JSX.Element[]>((accum, row) => {
             const label = <Typography variant="h6">{row.text}</Typography>;
             accum.push(label);
-            const input = row.type !== dto_type.bool ? <TextField onChange={(event) => {
-                    onChangeInput(event, row.attribute, row.type)
-                }} disabled={loading} className="modal-input" required
-                                                                  type={row.type === dto_type.number ? "number" : ""}/> :
-                <Checkbox onChange={(event) => {
-                    onChangeInput(event, row.attribute, row.type)
-                }}/>
+            let input: JSX.Element;
+            switch (row.type) {
+                case dto_type.bool:
+                    input = <Checkbox onChange={(event) => {
+                        onChangeInput(event, row.attribute, row.type)
+                    }}/>;
+                    break;
+                case dto_type.select:
+                    input =
+                        <Select
+                            onChange={(e) => onChangeSelectInCreate(e, row.attribute)}
+                        >
+                            {/*@ts-ignore*/}
+                            {selects[row.altTable] ? (selects[row.altTable].map(r =>
+                                <MenuItem value={r["id"]}> {r[row.mainRow]}</MenuItem>)) : <></>}
+                        </Select>
+                    break;
+                case dto_type.number:
+                    input = <TextField onChange={(event) => {
+                        onChangeInput(event, row.attribute, row.type)
+                    }} disabled={loading} className="modal-input" required
+                                       type={"number"}/>
+                    break;
+                default:
+                    input = <TextField onChange={(event) => {
+                        onChangeInput(event, row.attribute, row.type)
+                    }} disabled={loading} className="modal-input" required/>
+                    break;
+            }
             accum.push(input);
 
             return accum
@@ -124,7 +212,6 @@ export default function TablesPage() {
         }
         setLoading(false)
     }
-
     const onDeleteClickHandler = async (e: React.MouseEvent<HTMLButtonElement>) => {
         setLoading(true)
         if (selected.length < 1) {
@@ -149,6 +236,27 @@ export default function TablesPage() {
         setLoading(false)
     }
 
+    const onChangeEditingInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, attribute: string, type: dto_type) => {
+        let value: string | number | boolean;
+        switch (type) {
+            case dto_type.number:
+                value = Number.parseInt(e.target.value)
+                break;
+            case dto_type.bool:
+                // @ts-ignore
+                value = Boolean(e.target.checked)
+                break;
+            default:
+                value = e.target.value
+                break;
+        }
+
+        console.log(`Change editing ${attribute} | ${value}`)
+        setEditingState(prevState => ({
+            ...prevState,
+            [attribute]: value,
+        }))
+    }
     const onChangeInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, attribute: string, type: dto_type) => {
         // const value = type === dto_type.number ? Number.parseInt(e.target.value) : e.target.value;
         let value: string | number | boolean;
@@ -175,12 +283,43 @@ export default function TablesPage() {
         setCreateModalOpened(false)
     }
 
+    const closeEditingModal = () => {
+        setEditingState({})
+        setEditModalOpened(false)
+    }
+
+    const onEditClickHandler = async () => {
+        setLoading(true)
+        const attributes = create_dtos[selectedTable].data.map(d => d.attribute.toLowerCase());
+        for (const attribute of attributes) {
+            if (!editingState.hasOwnProperty(attribute)) {
+                setLoading(false)
+                console.log(`Поле ${attribute} не заполнено в `, editingState)
+                alert("Не все поля заполнены!")
+                return;
+            }
+        }
+        try {
+            console.log(`send request on update`)
+            console.log(editingState)
+            const response1 = await api.update(`${selectedTable}/${selected[0]}`, editingState);
+            const response2 = await api.get(`${selectedTable}/`)
+            generateColumns(response2);
+            closeEditingModal();
+        } catch (error: any) {
+            alert(error)
+        }
+
+        setLoading(false)
+    }
+
     const onCreateClickHandler = async (e: React.MouseEvent<HTMLButtonElement>) => {
         setLoading(true)
         const attributes = create_dtos[selectedTable].data.map(d => d.attribute);
         for (const attribute of attributes) {
-            if (!creationState[attribute]) {
+            if (!creationState.hasOwnProperty(attribute)) {
                 setLoading(false)
+                console.log(`Поле ${attribute} не заполнено в `, creationState)
                 alert("Не все поля заполнены!")
                 return;
             }
@@ -196,9 +335,13 @@ export default function TablesPage() {
         setLoading(false)
     }
 
-
     const rowsTxt = ["строка", "строки", "строк"]
     const cases = [2, 0, 1, 1, 1, 2]
+
+
+    const canEdit = () => {
+        return (selected.length === 1 && !Number.isNaN(Number(selected[0])));
+    }
 
     // @ts-ignore
     return (
@@ -220,20 +363,41 @@ export default function TablesPage() {
                 </Box>
             </Modal>
             {/*CREATE MODAL*/}
+            {!selectedTable ? <></> :
+                <Modal
+                    onClose={closeCreationModal}
+                    open={createModalOpened}>
+                    <Box sx={deleteStyle}>
+                        <Typography id="modal-modal-title" style={{marginBottom: "10px"}} variant="h6" component="h2">
+                            Создать запись в
+                            таблице <b>{selectedTable.length > 1 ? create_dtos[selectedTable].name : ""}</b>
+                        </Typography>
+                        <div style={{display: "flex", flexDirection: "column"}}>
+                            {selectedTable.length > 1 ? generateCreateRows() : <></>}
+                            <LoadingButton loading={loading} onClick={onCreateClickHandler} variant="outlined"
+                                           className="createBtn"
+                                           sx={createBtnStyle}>
+                                Создать
+                            </LoadingButton>
+                        </div>
+                    </Box>
+                </Modal>
+            }
+            {/*EDIT MODAL*/}
             <Modal
-                onClose={closeCreationModal}
-                open={createModalOpened}>
+                onClose={closeEditingModal}
+                open={editModalOpened}>
                 <Box sx={deleteStyle}>
                     <Typography id="modal-modal-title" style={{marginBottom: "10px"}} variant="h6" component="h2">
-                        Создать запись в
+                        Изменить запись с ID:{selected[0]} в
                         таблице <b>{selectedTable.length > 1 ? create_dtos[selectedTable].name : ""}</b>
                     </Typography>
                     <div style={{display: "flex", flexDirection: "column"}}>
-                        {selectedTable.length > 1 ? generateCreateRows() : <></>}
-                        <LoadingButton loading={loading} onClick={onCreateClickHandler} variant="outlined"
+                        {selectedTable.length > 1 ? generateEditRows() : <></>}
+                        <LoadingButton loading={loading} onClick={onEditClickHandler} variant="outlined"
                                        className="createBtn"
                                        sx={createBtnStyle}>
-                            Создать
+                            Изменить
                         </LoadingButton>
                     </div>
                 </Box>
@@ -244,8 +408,25 @@ export default function TablesPage() {
                     Генерация
                 </button>
             </div>
+            {canEdit() ?
+                <div id="generate_button_div">
+                    <button onClick={() => {
+                        if (Number.isNaN(Number(selected[0]))) return;
+                        const current_row = findRow(Number(selected[0]));
+                        setEditingState(current_row);
+                        setEditModalOpened(true)
+                    }} id="generate_button"
+                            disabled={loading || !canEdit()}
+                            className="btn add-btn">
+                        Изменить
+                    </button>
+                </div>
+                : <></>}
             <div className="table-header">
-                <button onClick={() => setCreateModalOpened(true)} disabled={loading || selectedTable.length < 1}
+                <button onClick={() => {
+                    generateSelects();
+                    setCreateModalOpened(true)
+                }} disabled={loading || selectedTable.length < 1}
                         className="btn add-btn">
                     Добавить
                 </button>

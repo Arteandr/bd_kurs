@@ -29,4 +29,14 @@ export const api = {
             throw error.response.data.data.error
         }
     },
+
+    async update(path: string, data: any) {
+        console.log(`put on ${url}/${path}`)
+        try {
+            const response = await axios.put(`${url}/${path}`, data)
+            return response.data.data;
+        } catch (error: any) {
+            throw error.response.data.data.error;
+        }
+    }
 }
