@@ -4,17 +4,16 @@ import './request-page.css'
 import {FormControl, InputLabel, MenuItem, Select, SelectChangeEvent} from "@mui/material";
 import {requests} from "./dtos";
 import {DataGrid, GridColDef, GridRowHeightParams} from "@mui/x-data-grid";
-import XLSX from "xlsx";
 import TextField from "@mui/material/TextField";
 import {api} from "./api";
 import {BarChart} from "@mui/x-charts";
+import XLSX from "xlsx"
 
 export default function RequestPage() {
     const [loading, setLoading] = useState<boolean>(false)
     const [columns, setColumns] = useState<GridColDef[]>([])
     const [rows, setRows] = useState<any[]>([])
     const [field, setField] = useState<string | number>("")
-    const [chartData, setChartData] = useState<{}>({})
     const [chartDataset, setChartDataset] = useState<any[]>([]);
     const [selectedRequest, setSelectedRequest] = useState<string>("");
     const {setActive} = useActive()
@@ -27,7 +26,7 @@ export default function RequestPage() {
         const value = e.target.value;
         setSelectedRequest(value)
         setField("")
-        setChartData([])
+        setChartDataset([])
     }
 
     const onChangeField = async (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -36,8 +35,17 @@ export default function RequestPage() {
     }
 
     const onExportClick = async () => {
-        const filteredData = chartData.reduce((accum, row) => ({...accum, [row.label]: row.value}), {})
-        const workSheet = XLSX.utils.json_to_sheet([filteredData])
+        const filteredData = chartDataset.reduce((accum, row) => {
+            accum.push({
+                "Качество пленки": row["group"],
+                "Всего фильмов": row["total"],
+                "С длительностью больше часа": row["moreDuration"],
+                "Созданные после 2012": row["after"]
+            })
+
+            return accum
+        }, [])
+        const workSheet = XLSX.utils.json_to_sheet(filteredData)
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, workSheet, "Данные");
         XLSX.writeFile(workbook, "data.xlsx", {compression: true})
@@ -84,14 +92,11 @@ export default function RequestPage() {
         try {
             const response = await api.get(request.path + (request.withField ? `/${field}` : ""))
             generateColumns(response)
-            console.log("response", response)
             const groups: any[] = [];
             const series: any[] = [];
             const dataset: any[] = [];
             if (request.withChart) {
                 // const colors = ["#0088FF", "#00C49F", "#FFBB28"]
-                const arr: any[] = [];
-                // let i = 0;
                 if (response instanceof Array)
                     response.forEach(r => {
                         const group = r["Качество пленки"];
@@ -107,21 +112,6 @@ export default function RequestPage() {
                             group
                         })
                     })
-
-                const chart_data = {
-                    xAxis: [{scaleType: 'band', data: groups}],
-                    series
-                }
-                console.log(chart_data)
-                // for (const [key, value] of Object.entries(response[0])) {
-                //     arr.push({
-                //         id: ++i,
-                //         value: Number(value),
-                //         label: key,
-                //         color: colors.pop()
-                //     })
-                // }
-                setChartData(chart_data)
                 setChartDataset(dataset)
             }
         } catch (error: any) {
