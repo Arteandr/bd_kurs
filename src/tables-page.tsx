@@ -48,6 +48,7 @@ export default function TablesPage() {
     const [editModalOpened, setEditModalOpened] = useState<boolean>(false)
     const [columns, setColumns] = useState<GridColDef[]>([])
     const [rows, setRows] = useState<any[]>([])
+    const [activeRows, setActiveRows] = useState<any[]>([]);
     const [error, setError] = useState<string>("");
     const [selected, setSelected] = useState<GridRowId[]>([])
     const [selectedTable, setSelectedTable] = useState<string>("");
@@ -71,6 +72,8 @@ export default function TablesPage() {
             r.push({...dataElement})
             for (const [key, value] of Object.entries(dataElement)) {
                 if (hash.has(key)) continue;
+                const splited_key = key.split(" ");
+                if (splited_key[splited_key.length - 1] === "ID") continue
                 hash.set(key, value)
                 t.push({
                     field: key,
@@ -87,10 +90,8 @@ export default function TablesPage() {
     }
 
     const findRow = (id: number) => {
-        const r = rows.find(row => row.id === id);
-        console.log("Найденая строка: ", r)
-
-        return r;
+        const i = rows.findIndex(row => row.id === id);
+        return {row: rows[i], index: i}
     }
 
     const generateEditRows = () => {
@@ -98,31 +99,51 @@ export default function TablesPage() {
         return create_dtos[selectedTable].data.reduce<JSX.Element[]>((accum, row) => {
             const label = <Typography variant="h6">{row.text}</Typography>;
             accum.push(label);
-            console.log(`Generate field | Type: ${row.type} | Attribute: ${row.attribute.toLowerCase()} | Current value: ${editingState[row.attribute.toLowerCase()]}`)
-            const input = row.type !== dto_type.bool ?
-                <TextField
-                    defaultValue={editingState[row.attribute.toLowerCase()]}
-                    onChange={(event) => {
-                        onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
-                    }} className="modal-input"
-                    type={row.type === dto_type.number ? "number" : ""}/> :
-                <Checkbox checked={editingState[row.attribute.toLowerCase()]} onChange={(event) => {
-                    onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
-                }}/>
+            let input: JSX.Element;
+            switch (row.type) {
+                case dto_type.bool:
+                    input = <Checkbox checked={editingState[row.text]} onChange={(event) => {
+                        onChangeEditingInput(event, row.text, row.type)
+                    }}/>;
+                    break;
+                case dto_type.number:
+                    input = <TextField defaultValue={editingState[row.text]} onChange={(event) => {
+                        onChangeEditingInput(event, row.text, row.type)
+                    }} disabled={loading} className="modal-input" required
+                                       type={"number"}/>
+                    break;
+                case dto_type.select:
+                    input =
+                        <Select
+                            defaultValue={editingState[row.text + " ID"]}
+                            onChange={(e) => onChangeSelectInEditing(e, row.text)}
+                        >
+                            {/*@ts-ignore*/}
+                            {selects[row.altTable] ? (selects[row.altTable].map(r => <MenuItem
+                                value={r["id"]}> {r[row.mainRow]}</MenuItem>)) : <></>}
+                        </Select>
+                    break;
+                default:
+                    input = <TextField defaultValue={editingState[row.text]} onChange={(event) => {
+                        onChangeEditingInput(event, row.text, row.type)
+                    }} disabled={loading} className="modal-input" required/>
+                    break;
+            }
+            // const input = row.type !== dto_type.bool ?
+            //     <TextField
+            //         defaultValue={editingState[row.attribute.toLowerCase()]}
+            //         onChange={(event) => {
+            //             onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
+            //         }} className="modal-input"
+            //         type={row.type === dto_type.number ? "number" : ""}/> :
+            //     <Checkbox checked={editingState[row.attribute.toLowerCase()]} onChange={(event) => {
+            //         onChangeEditingInput(event, row.attribute.toLowerCase(), row.type)
+            //     }}/>
             accum.push(input);
 
             return accum
         }, []);
     }
-    // const generateReduce = async (accum: Promise<{}>, row: row) => {
-    //     if (!row.altTable || !row.mainRow) return accum;
-    //     const response = await api.get(`${row.altTable}/`);
-    //     // return {...accum, [row.altTable]: response[row.mainRow]}
-    //     if (row.altTable !== undefined && row.mainRow !== undefined) {
-    //         accum.then(obj => obj[row.altTable] = response[row.mainRow])
-    //     }
-    //     return accum;
-    // }
 
     const generateSelects = () => {
         setLoading(true)
@@ -145,7 +166,13 @@ export default function TablesPage() {
                 return {...prevState, [attribute]: id}
             }
         )
-        console.log("CREATION_STATE: ", creationState)
+    }
+
+    const onChangeSelectInEditing = (event: SelectChangeEvent, attribute: string) => {
+        const id = Number(event.target.value);
+        setEditingState(prevState => {
+            return {...prevState, [attribute + " ID"]: id}
+        })
     }
 
     const generateCreateRows = () => {
@@ -165,8 +192,8 @@ export default function TablesPage() {
                             onChange={(e) => onChangeSelectInCreate(e, row.attribute)}
                         >
                             {/*@ts-ignore*/}
-                            {selects[row.altTable] ? (selects[row.altTable].map(r =>
-                                <MenuItem value={r["id"]}> {r[row.mainRow]}</MenuItem>)) : <></>}
+                            {selects[row.altTable] ? (selects[row.altTable].map(r => <MenuItem
+                                value={r["id"]}> {r[row.mainRow]}</MenuItem>)) : <></>}
                         </Select>
                     break;
                 case dto_type.number:
@@ -193,6 +220,7 @@ export default function TablesPage() {
         setSelectedTable(selectedTable)
         const response = await api.get(`${selectedTable}/`);
         generateColumns(response)
+        setActiveRows(response)
         setLoading(false)
     }
 
@@ -229,6 +257,7 @@ export default function TablesPage() {
             setLoading(false)
             const response = await api.get(`${selectedTable}/`);
             generateColumns(response)
+            setActiveRows(response)
         } catch (error: any) {
             setError(error.toString())
         }
@@ -251,7 +280,6 @@ export default function TablesPage() {
                 break;
         }
 
-        console.log(`Change editing ${attribute} | ${value}`)
         setEditingState(prevState => ({
             ...prevState,
             [attribute]: value,
@@ -290,21 +318,32 @@ export default function TablesPage() {
 
     const onEditClickHandler = async () => {
         setLoading(true)
-        const attributes = create_dtos[selectedTable].data.map(d => d.attribute.toLowerCase());
+        console.log(editingState)
+        const finalEditingState: { [key: string]: any } = {}
+        for (const k in editingState) {
+            const found_row = create_dtos[selectedTable].data.find(row => row.text === k);
+            if (found_row) {
+                const split_key = found_row.attribute.split(/(?=[A-Z])/)
+                finalEditingState[found_row.attribute] = split_key[split_key.length - 1] === "Id" ? editingState[k + " ID"] : editingState[k];
+            } else
+                console.log("not found key: ", k)
+            // }
+
+        }
+        const attributes = create_dtos[selectedTable].data.map(d => d.attribute);
         for (const attribute of attributes) {
-            if (!editingState.hasOwnProperty(attribute)) {
+            if (!finalEditingState.hasOwnProperty(attribute)) {
                 setLoading(false)
-                console.log(`Поле ${attribute} не заполнено в `, editingState)
+                console.log(`Поле ${attribute} не заполнено`)
                 alert("Не все поля заполнены!")
                 return;
             }
         }
         try {
-            console.log(`send request on update`)
-            console.log(editingState)
-            const response1 = await api.update(`${selectedTable}/${selected[0]}`, editingState);
+            const response1 = await api.update(`${selectedTable}/${selected[0]}`, finalEditingState);
             const response2 = await api.get(`${selectedTable}/`)
             generateColumns(response2);
+            setActiveRows(response2)
             closeEditingModal();
         } catch (error: any) {
             alert(error)
@@ -319,7 +358,6 @@ export default function TablesPage() {
         for (const attribute of attributes) {
             if (!creationState.hasOwnProperty(attribute)) {
                 setLoading(false)
-                console.log(`Поле ${attribute} не заполнено в `, creationState)
                 alert("Не все поля заполнены!")
                 return;
             }
@@ -328,6 +366,7 @@ export default function TablesPage() {
             const response1 = await api.post(`${selectedTable}/`, creationState)
             const response2 = await api.get(`${selectedTable}/`);
             generateColumns(response2)
+            setActiveRows(response2)
             closeCreationModal()
         } catch (error: any) {
             alert(error)
@@ -413,7 +452,8 @@ export default function TablesPage() {
                     <button onClick={() => {
                         if (Number.isNaN(Number(selected[0]))) return;
                         const current_row = findRow(Number(selected[0]));
-                        setEditingState(current_row);
+                        generateSelects()
+                        setEditingState(activeRows[current_row.index]);
                         setEditModalOpened(true)
                     }} id="generate_button"
                             disabled={loading || !canEdit()}

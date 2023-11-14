@@ -20,6 +20,8 @@ export enum dto_type {
     select,
 }
 
+const name_attribute = "Название";
+
 export const create_dtos: dtos_type = {
     "films": {
         name: "Фильмы",
@@ -27,12 +29,12 @@ export const create_dtos: dtos_type = {
             {
                 attribute: "name",
                 "type": dto_type.string,
-                "text": "Имя фильма",
+                "text": "Название",
             },
             {
                 attribute: "description",
                 type: dto_type.string,
-                text: "Описание фильма"
+                text: "Описание"
             },
             {
                 attribute: "photo",
@@ -42,32 +44,32 @@ export const create_dtos: dtos_type = {
             {
                 attribute: "creationYear",
                 type: dto_type.number,
-                text: "Год создания фильма"
+                text: "Год выпуска"
             },
             {
                 attribute: "duration",
                 type: dto_type.number,
-                text: "Длительность фильма"
+                text: "Длительность"
             },
             {
                 attribute: "directorId",
                 type: dto_type.select,
                 altTable: "directors",
-                text: "Режиссер",
+                text: "Фамилия режиссера",
                 mainRow: "Фамилия",
             },
             {
                 attribute: "qualityId",
                 type: dto_type.select,
                 altTable: "qualities",
-                text: "Качество пленки",
+                text: "Качество",
                 mainRow: "Название",
             },
             {
                 attribute: "studioId",
                 type: dto_type.select,
                 altTable: "studios",
-                text: "Студия",
+                text: "Название студии",
                 mainRow: "Название",
             }
         ]
@@ -75,19 +77,19 @@ export const create_dtos: dtos_type = {
     "cinemas": {
         name: "Кинотеатры",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Имя кинотеатра"},
-            {attribute: "address", type: dto_type.string, text: "Адресс кинотеатра"},
-            {attribute: "phone", type: dto_type.string, text: "Телефон кинотеатра"},
-            {attribute: "license", type: dto_type.string, text: "Лицензии кинотеатра"},
+            {attribute: "name", type: dto_type.string, text: "Название"},
+            {attribute: "address", type: dto_type.string, text: "Адрес"},
+            {attribute: "phone", type: dto_type.string, text: "Номер телефона"},
+            {attribute: "license", type: dto_type.string, text: "Номер лицензии"},
             {attribute: "licenseEnd", type: dto_type.string, text: "Дата окончания лицензии"},
-            {attribute: "seats", type: dto_type.number, text: "Количество мест"},
-            {attribute: "online", type: dto_type.bool, text: "Возможность покупки онлайн"},
+            {attribute: "seats", type: dto_type.number, text: "Кол-во сидений"},
+            {attribute: "online", type: dto_type.bool, text: "Возможно покупки онлайн"},
             {
                 attribute: "typeId",
                 type: dto_type.select,
                 mainRow: "Название",
                 altTable: "cinema_types",
-                text: "Тип собственности"
+                text: "Тип"
             },
             {attribute: "districtId", type: dto_type.select, mainRow: "Название", altTable: "districts", text: "Район"},
         ]
@@ -96,82 +98,82 @@ export const create_dtos: dtos_type = {
         name: "Сеансы",
         data: [
             {attribute: "date", type: dto_type.string, text: "Дата сеанса"},
-            {attribute: "ticketsSold", type: dto_type.number, text: "Количество проданных билетов"},
-            {attribute: "ticketsOnline", type: dto_type.number, text: "Количество заказаных билетов через интернет"},
-            {attribute: "price", type: dto_type.number, text: "Цена билета"},
+            {attribute: "ticketsSold", type: dto_type.number, text: "Проданные билеты"},
+            {attribute: "ticketsOnline", type: dto_type.number, text: "Проданные билеты онлайн"},
+            {attribute: "price", type: dto_type.number, text: "Стоимость"},
             {
                 attribute: "filmId",
                 type: dto_type.select,
                 mainRow: "Название",
                 altTable: "films",
-                text: "Фильм"
+                text: "Название фильма"
             },
             {
                 attribute: "cinemaId",
                 type: dto_type.select,
                 mainRow: "Название",
                 altTable: "cinemas",
-                text: "Кинотеатр"
+                text: "Название кинотеатра"
             },
             {
                 attribute: "typeId",
                 type: dto_type.select,
                 mainRow: "Название",
                 altTable: "session_types",
-                text: "Тип сеанса"
+                text: "Тип"
             },
         ]
     },
     "directors": {
         name: "Режиссеры",
         data: [
-            {attribute: "firstName", type: dto_type.string, text: "Имя режиссера"},
-            {attribute: "lastName", type: dto_type.string, text: "Фамилия режиссера"},
+            {attribute: "firstName", type: dto_type.string, text: "Имя"},
+            {attribute: "lastName", type: dto_type.string, text: "Фамилия"},
         ]
     },
     "qualities": {
         name: "Качества пленки",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Название качества"}
+            {attribute: "name", type: dto_type.string, text: "Название"}
         ]
     },
     "studios": {
         name: "Студии",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Названии студии"},
-            {attribute: "creationYear", type: dto_type.number, text: "Год создания студии"},
+            {attribute: "name", type: dto_type.string, text: "Название"},
+            {attribute: "creationYear", type: dto_type.number, text: "Год основания"},
             {
                 attribute: "countryId",
                 type: dto_type.select,
                 altTable: "countries",
                 mainRow: "Название",
-                text: "Идентификатор страны размещения студии"
+                text: "Страна основания"
             },
         ]
     },
     "session_types": {
         name: "Типы сеансов",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Названии типа сеанса"},
+            {attribute: "name", type: dto_type.string, text: "Название"},
             {attribute: "ration", type: dto_type.number, text: "Коэффициент"},
         ]
     },
     "cinema_types": {
         name: "Типы собственности",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Название типа собственности"}
+            {attribute: "name", type: dto_type.string, text: "Название"}
         ]
     },
     "districts": {
         name: "Районы",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Название района"}
+            {attribute: "name", type: dto_type.string, text: "Название"}
         ]
     },
     "countries": {
         name: "Страны",
         data: [
-            {attribute: "name", type: dto_type.string, text: "Название страны"}
+            {attribute: "name", type: dto_type.string, text: "Название"}
         ]
     }
 }
