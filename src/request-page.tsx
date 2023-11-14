@@ -7,14 +7,15 @@ import {DataGrid, GridColDef, GridRowHeightParams} from "@mui/x-data-grid";
 import XLSX from "xlsx";
 import TextField from "@mui/material/TextField";
 import {api} from "./api";
-import {pieArcLabelClasses, PieChart} from "@mui/x-charts";
+import {BarChart} from "@mui/x-charts";
 
 export default function RequestPage() {
     const [loading, setLoading] = useState<boolean>(false)
     const [columns, setColumns] = useState<GridColDef[]>([])
     const [rows, setRows] = useState<any[]>([])
     const [field, setField] = useState<string | number>("")
-    const [chartData, setChartData] = useState<any[]>([])
+    const [chartData, setChartData] = useState<{}>({})
+    const [chartDataset, setChartDataset] = useState<any[]>([]);
     const [selectedRequest, setSelectedRequest] = useState<string>("");
     const {setActive} = useActive()
     useEffect(() => {
@@ -83,19 +84,45 @@ export default function RequestPage() {
         try {
             const response = await api.get(request.path + (request.withField ? `/${field}` : ""))
             generateColumns(response)
+            console.log("response", response)
+            const groups: any[] = [];
+            const series: any[] = [];
+            const dataset: any[] = [];
             if (request.withChart) {
-                const colors = ["#0088FF", "#00C49F", "#FFBB28"]
+                // const colors = ["#0088FF", "#00C49F", "#FFBB28"]
                 const arr: any[] = [];
-                let i = 0;
-                for (const [key, value] of Object.entries(response[0])) {
-                    arr.push({
-                        id: ++i,
-                        value: Number(value),
-                        label: key,
-                        color: colors.pop()
+                // let i = 0;
+                if (response instanceof Array)
+                    response.forEach(r => {
+                        const group = r["Качество пленки"];
+                        groups.push(group)
+                        const total = Number(r["Всего фильмов"]);
+                        const moreDuration = Number(r["С длительностью больше часа"])
+                        const after = Number(r["Созданные после 2012"])
+                        series.push({data: [total, moreDuration, after]})
+                        dataset.push({
+                            total,
+                            moreDuration,
+                            after,
+                            group
+                        })
                     })
+
+                const chart_data = {
+                    xAxis: [{scaleType: 'band', data: groups}],
+                    series
                 }
-                setChartData(arr)
+                console.log(chart_data)
+                // for (const [key, value] of Object.entries(response[0])) {
+                //     arr.push({
+                //         id: ++i,
+                //         value: Number(value),
+                //         label: key,
+                //         color: colors.pop()
+                //     })
+                // }
+                setChartData(chart_data)
+                setChartDataset(dataset)
             }
         } catch (error: any) {
             console.error("ERROR: ", error);
@@ -126,6 +153,8 @@ export default function RequestPage() {
         return retVal;
     }
 
+    // @ts-ignore
+    // @ts-ignore
     return (
         <div className="requests-page">
             <div className="table-header requests-header">
@@ -162,26 +191,32 @@ export default function RequestPage() {
                     }}
                 />
                 {
-                    chartData.length > 0 ?
+                    chartDataset.length > 0 ?
                         <div style={{display: "flex", alignItems: "center"}}>
-                            <PieChart
-                                slotProps={{legend: {hidden: true}}}
-                                series={[
-                                    {
-                                        cornerRadius: 5,
-                                        arcLabel: (item) => `${item.label}(${item.value})`,
-                                        data: chartData,
-                                    },
-                                ]}
-                                sx={{
-                                    [`& .${pieArcLabelClasses.root}`]: {
-                                        fill: "black",
-                                        fontWeight: "bold",
-                                        fontSize: "13px",
-                                    },
-                                }} width={800}
-                                height={500}
-                            />
+                            {/*<BarChart*/}
+                            {/*    slotProps={{legend: {hidden: true}}}*/}
+                            {/*    series={[*/}
+                            {/*        {*/}
+                            {/*            cornerRadius: 5,*/}
+                            {/*            arcLabel: (item) => `${item.label}(${item.value})`,*/}
+                            {/*            data: chartData,*/}
+                            {/*        },*/}
+                            {/*    ]}*/}
+                            {/*    sx={{*/}
+                            {/*        [`& .${pieArcLabelClasses.root}`]: {*/}
+                            {/*            fill: "black",*/}
+                            {/*            fontWeight: "bold",*/}
+                            {/*            fontSize: "13px",*/}
+                            {/*        },*/}
+                            {/*    }} width={800}*/}
+                            {/*    height={500}*/}
+                            {/*/>*/}
+                            {/*@ts-ignore*/}
+                            <BarChart dataset={chartDataset} series={[
+                                {dataKey: 'total', label: "Всего фильмов"},
+                                {dataKey: 'moreDuration', label: "С длительностью больше часа"},
+                                {dataKey: 'after', label: "Созданные после 2012"},
+                            ]} xAxis={[{scaleType: "band", dataKey: "group"}]} width={800} height={500}/>
                             <button onClick={onExportClick} className="btn add-btn">Экспортировать в Excel</button>
                         </div>
                         : null
