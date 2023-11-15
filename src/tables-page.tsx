@@ -231,10 +231,7 @@ export default function TablesPage() {
     const onGenerateClickHandler = async (e: React.MouseEvent<HTMLButtonElement>) => {
         setLoading(true)
         try {
-            await api.get("studios/generate/10000")
-            await api.get("films/generate/10000")
-            await api.get("cinemas/generate/10000")
-            await api.get("sessions/generate/10000")
+            await api.get("sessions/generate/100")
         } catch (error: any) {
             setError(error.toString())
         }
@@ -441,12 +438,12 @@ export default function TablesPage() {
                     </div>
                 </Box>
             </Modal>
-            <div id="generate_button_div">
-                <button onClick={onGenerateClickHandler} id="generate_button" disabled={loading}
-                        className="btn add-btn">
-                    Генерация
-                </button>
-            </div>
+            {/*<div id="generate_button_div">*/}
+            {/*    <button onClick={onGenerateClickHandler} id="generate_button" disabled={loading}*/}
+            {/*            className="btn add-btn">*/}
+            {/*        Генерация*/}
+            {/*    </button>*/}
+            {/*</div>*/}
             {canEdit() ?
                 <div id="generate_button_div">
                     <button onClick={() => {
